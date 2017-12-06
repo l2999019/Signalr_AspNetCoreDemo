@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Streaming SignalR</title>
+</head>
+
+<body>
+    <div class="container">
+        <input type="button" id="startStreaming" value="Send" />
+        <ul id="discussion"></ul>
+    </div>
+    <script type="text/javascript" src="signalr-client-1.0.0-alpha2-final.js"></script>
+
+    <script type="text/javascript">
+        //设置连接方式
+        //var transport = signalR.TransportType.WebSockets;
+        var transport = signalR.TransportType.LongPolling; 
+        //创建连接
+        var connection = new signalR.HubConnection(`http://${document.location.host}/streaming`, { transport: transport });
+        //获取按钮
+        var button = document.getElementById("startStreaming");
+        //注册订阅方法
+        function startStreaming(){
+            connection.stream("StartStreaming").subscribe({
+                next: onStreamReceived,
+                err: function(err){
+                    console.log(err);
+                },
+                complete: function(){
+                    console.log("完成流传输");
+                }
+            });
+        }
+        //注册开启注册的方法
+        connection.on("streamStarted", function(){
+            startStreaming();
+        });
+
+        //添加按钮事件,调用初始化订阅的方法
+        button.addEventListener("click", event => {
+            connection.invoke("sendStreamInit");
+        });
+
+        //展示订阅得到的消息
+        function onStreamReceived(data){
+            console.log("收到消息: " + data);
+            var liElement = document.createElement('li');
+            liElement.innerHTML = '<strong>' + "收到消息" + '</strong>:&nbsp;&nbsp;' + data;
+            document.getElementById('discussion').appendChild(liElement);
+        }
+
+        connection.start();
+    </script>
+</body>
+
+</html>
